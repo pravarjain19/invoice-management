@@ -4,6 +4,7 @@ import './App.css'
 import Home from './component/home/Home'
 import { BrowserRouter as Router, Route , Routes } from 'react-router-dom';
 import Detail from './component/details/Detail';
+import Login from './component/login/Login';
 function App() {
  
 
@@ -12,7 +13,9 @@ function App() {
   
 
     <Routes>
+    {/* <Route path='/' Component={Login}></Route> */}
     <Route path='/' Component={Home}></Route>
+
     <Route path="/invoiceDetail/:id" Component={Detail} />
     </Routes>
  

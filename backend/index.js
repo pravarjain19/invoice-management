@@ -2,7 +2,7 @@ const express = require('express');
 const { port } = require('./config/config');
 const cors = require('cors');
 
-const {  invoiceDetail } = require('./db');
+const {  invoiceDetail, User } = require('./db');
 const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem } = require('./helper/helper');
 
 
@@ -66,6 +66,25 @@ app.post('/v1/invoice/update/:invoiceId'  , async (req, res)=>{
         res.status(200).json({data : val})
     }).catch(()=> res.status(500).json({message : "Failed"}))
     
+})
+
+
+app.post('/v1/invoice/login' , async (req , res)=>{
+   const username = req.body.username 
+   const password = req.body.password
+    console.log(username , password);
+   User.find({
+    userName : username,
+    password : password
+   }).then((val)=>{
+    if(val){
+        console.log(val);
+        res.status(200).json({msg : "login success"})
+    }
+   }).catch((err)=>{
+    console.log(err);
+    res.status(403).json({msg : "Invalid Credentials"})
+   })
 })
 
 

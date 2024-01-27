@@ -76,6 +76,12 @@ const sbSchema = new mongoose.Schema({
       },
     ],
 })
+const userSchema = new mongoose.Schema({
+    userName : String,
+    password : String,
+})
+
+const User = mongoose.model('User' , userSchema);
 const invoiceDetail = mongoose.model('invoiceDetail' , invoiceSchema)
 const invoiceItems = mongoose.model('invoiceItems' , invoiceItemSchema)
 const kyariCost = mongoose.model('kyariCost', kyariCostSchema);
@@ -85,4 +91,4 @@ const test = mongoose.model('test' ,sbSchema )
 
 
 
-module.exports = {kyariCost , orderDetails , itemMaster , invoiceItems ,invoiceDetail}
+module.exports = {kyariCost , orderDetails , itemMaster , invoiceItems ,invoiceDetail , User}
