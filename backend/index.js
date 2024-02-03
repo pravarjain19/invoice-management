@@ -3,7 +3,9 @@ const { port } = require('./config/config');
 const cors = require('cors');
 
 const {  invoiceDetail, User } = require('./db');
-const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem } = require('./helper/helper');
+const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems } = require('./helper/helper');
+
+const path = require('path')
 
 
 
@@ -12,6 +14,9 @@ app.use(cors());
 
 app.use(express.json())
 
+const _dirname= path.dirname("")
+const buildPath = path.join(_dirname , "../forntend/dist")
+app.use(express.static(buildPath))
 app.get("/v1/invoice/getCount/:locationId" , async (req, res )=>{
 try{
     let ordersNumber = await getNumberOfPendingOfInvoice(req.params.locationId)
@@ -68,6 +73,27 @@ app.post('/v1/invoice/update/:invoiceId'  , async (req, res)=>{
     
 })
 
+app.get('/v1/invoice/getexcel' , async(req,res)=>{
+
+   const workbook= await generateExcelSheetForInvoice();
+   const currentDate = new Date();
+   const formattedDate = new Date().toISOString().replace(/:/g, '-');;
+   res.setHeader(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  );
+  res.setHeader(
+    'Content-Disposition',
+    'attachment; filename=invoice_'+formattedDate+'.xlsx'
+  );
+   workbook.xlsx.write(res).then(()=>{
+    console.log("File has been downloaded")
+   })
+})
+
+app.get('/v1/invoice/getpdf'  , async (req , res)=>{
+   await getPdfForInvoiceItems(1897057 , res)
+})
 
 app.post('/v1/invoice/login' , async (req , res)=>{
    const username = req.body.username 

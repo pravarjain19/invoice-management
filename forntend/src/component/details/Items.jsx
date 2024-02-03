@@ -29,12 +29,6 @@ const columns = [
     align: 'right',
    
   },
-  {
-    id: 'batchId',
-    label: 'Batch Id',
-    minWidth: 100,
-    align: 'right',
-  },
   
 ];
 

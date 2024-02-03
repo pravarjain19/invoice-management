@@ -1,11 +1,17 @@
 const mongoose = require("mongoose");
 
 
-    mongoose.connect("mongodb://127.0.0.1/selebdb")
-    .then(() => { console.log('Connected to MongoDB') })
-    .catch(()=>console.log("Error connecting to Db"))
+const mongoDBAtlasURI = 'mongodb+srv://pravarjain:root@cluster0.zbqwqff.mongodb.net/?retryWrites=true&w=majority';
+const dbName = 'selebdb';
+mongoose.connect(mongoDBAtlasURI, { useNewUrlParser: true, useUnifiedTopology: true, dbName });
 
+const db = mongoose.connection;
 
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+db.once('open', () => {
+  console.log('Connected to MongoDB Atlas');
+
+})
 const kyariCostSchema = new mongoose.Schema({
     vendorCode : String,
     childSKU :String ,
