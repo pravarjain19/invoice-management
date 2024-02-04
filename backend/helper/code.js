@@ -1,3 +1,4 @@
+const { bactchId } = require("./helper");
 
   
   const groupedArray = finalArray.reduce((acc, item) => {
@@ -161,6 +162,10 @@
   
         return acc;
       }, []);
+
+      // console.log(groupedArray);
+
+      
   
       // Writing groupedArray to a JSON file
   

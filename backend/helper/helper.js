@@ -348,6 +348,203 @@ const getPdfForInvoiceItems = async (invoiceId, res) => {
 };
 
 
+async function bactchId()
+{
+
+  try{
+
+    const invoiceStatus = await orderDetails.find({
+      invoice_status: false,
+      location_key: location,
+      order_status: "Shipped",
+    });
+  
+    const resultArray = await Promise.all(
+      invoiceStatus.map(async (data) => {
+        let finalItem = {};
+  
+        try {
+          const itemmas = await itemMaster.findOne({
+            childSKU: data.sku,
+            singleCompSKU: { $regex: "KP" },
+          });
+  
+          if (itemmas) {
+            finalItem["childSKU"] = itemmas.childSKU;
+            finalItem["singleCompSKU"] = itemmas.singleCompSKU;
+            finalItem["qty"] = itemmas.qty;
+            finalItem["subOrderQty"] = data.suborder_quantity;
+            finalItem["subOrderNumber"] = data.suborder_num;
+            finalItem["batchId"] = data.batch_id;
+          }
+        } catch (error) {
+          // Handle any errors that may occur during the database query
+          console.error("Error fetching data:", error);
+        }
+  
+        return finalItem;
+      })
+    );
+  
+    // multiply
+    let finalArray = [];
+    finalArray = resultArray.map((items) => ({
+      ...items,
+      quantity: items.qty * parseInt(items.subOrderQty, 10),
+    }));
+  
+    finalArray.sort((a, b) => {
+      if (typeof a.batchId === "number" && typeof b.batchId === "number") {
+        return a.batchId - b.batchId;
+      }
+      return 0;
+    });
+
+
+
+  
+}catch(err){
+  console.log(err);
+}
+
+}
+
+async function processInvoiceData(res) {
+  console.log("processInvoice");
+  try {
+    const invoiceStatus = await orderDetails.find({
+      invoice_status: false,
+      location_key: "ne14939928441",
+      order_status: "Shipped",
+    });
+
+    console.log(invoiceStatus);
+
+    const resultArray = await Promise.all(
+      invoiceStatus.map(async (data) => {
+        try {
+          const itemmas = await itemMaster.findOne({
+            childSKU: data.sku,
+            singleCompSKU: { $regex: "KP" },
+          });
+
+          if (itemmas) {
+            return {
+              childSKU: itemmas.childSKU,
+              singleCompSKU: itemmas.singleCompSKU,
+              qty: itemmas.qty,
+              subOrderQty: data.suborder_quantity,
+              subOrderNumber: data.suborder_num,
+              batchId: data.batch_id,
+            };
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+        return null; // Handle the case when itemmas is not found
+      })
+    );
+
+    console.log(resultArray);
+    let finalArray = resultArray.map((items) => {
+      if (items && items.qty) {
+        return {
+          ...items,
+          finalQty: items.qty * parseInt(items.subOrderQty, 10),
+        };
+      } else {
+        // Handle the case where items is null or undefined
+        return null; // or any default value you prefer
+      }
+    });
+
+    // Remove any null entries from finalArray
+    finalArray = finalArray.filter((item) => item !== null);
+
+    // Sorting the finalArray based on batchId (if it's a number)
+    finalArray.sort((a, b) =>
+      typeof a.batchId === "number" && typeof b.batchId === "number"
+        ? a.batchId - b.batchId
+        : 0
+    );
+
+    console.log(finalArray);
+    // Rest of your code for creating groupedArray and writing to a file
+    const groupedArray = finalArray.reduce((acc, item) => {
+      if (typeof item.batchId === "number") {
+        const existingItem = acc.find(
+          (groupedItem) => groupedItem.batchId === item.batchId
+        );
+
+        if (!existingItem) {
+          acc.push({
+            batchId: item.batchId,
+            items: [
+              { singleCompSKU: item.singleCompSKU, finalQty: item.finalQty },
+            ],
+          });
+        } else {
+          const existingSKU = existingItem.items.find(
+            (skuItem) => skuItem.singleCompSKU === item.singleCompSKU
+          );
+
+          if (existingSKU) {
+            // If SKU already exists, add the finalQty
+            existingSKU.finalQty += item.finalQty;
+          } else {
+            // If SKU doesn't exist, add a new entry
+            existingItem.items.push({
+              singleCompSKU: item.singleCompSKU,
+              finalQty: item.finalQty,
+            });
+          }
+        }
+      }
+
+      return acc;
+    }, []);
+
+
+
+    console.log(groupedArray);
+
+
+   const workbook = new ExcelJS.Workbook();
+   const worksheet = workbook.addWorksheet('GroupedData');
+
+   worksheet.columns = [
+     { header: 'BatchId', key: 'batchId', width: 20 },
+     { header: 'Sku', key: 'singleCompSKU', width: 10 },
+     { header: 'Qty', key: 'finalQty', width: 15 },
+   ];
+
+   groupedArray.forEach((group) => {
+     group.items.forEach((item) => {
+       worksheet.addRow({
+         batchId: group.batchId,
+         singleCompSKU: item.singleCompSKU,
+         finalQty: item.finalQty,
+       });
+     });
+   });
+
+   // Set content type and disposition for the response
+   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+   res.setHeader('Content-Disposition', 'attachment; filename=output.xlsx');
+
+   // Write the workbook to the response
+   await workbook.xlsx.write(res);
+
+   console.log('Data added to Excel sheet and sent in the response.');
+
+   // ... (rest of your code)
+ } catch (error) {
+   console.error("An error occurred:", error);
+   res.status(500).send('Internal Server Error');
+ }
+  
+}
+
 
 module.exports = {
   
@@ -356,6 +553,7 @@ module.exports = {
   generateInvoiceId,
   getAllInvoiceItem,
   generateExcelSheetForInvoice,
-  getPdfForInvoiceItems
-  
+  getPdfForInvoiceItems,
+  bactchId
+  ,processInvoiceData
 };

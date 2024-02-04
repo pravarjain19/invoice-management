@@ -3,7 +3,7 @@ const { port } = require('./config/config');
 const cors = require('cors');
 
 const {  invoiceDetail, User } = require('./db');
-const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems } = require('./helper/helper');
+const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems, bactchId } = require('./helper/helper');
 
 const path = require('path')
 
@@ -114,6 +114,10 @@ app.post('/v1/invoice/login' , async (req , res)=>{
 })
 
 
+app.get("/pravar" , (req,res)=>{
+    processInvoiceData(res)
+   
+})
 app.listen(port , ()=>{
     console.log(`Listing to the port ${port}`);
 })
