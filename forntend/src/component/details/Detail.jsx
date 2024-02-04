@@ -45,7 +45,8 @@ const Detail = () => {
       
         const res = await instance.get('/invoiceItem/'+id)
         .catch((err)=>console.error(err))
-        
+       
+      
         setInvoice(res.data.data)
         setItems(res.data)
       

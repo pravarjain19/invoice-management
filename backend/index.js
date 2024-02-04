@@ -118,6 +118,17 @@ app.get("/pravar" , (req,res)=>{
     processInvoiceData(res)
    
 })
+
+app.post("/v1/invoice/updateStatus/:invoiceId" , (req, res)=>{
+    invoiceDetail.updateOne({
+        invoice_no:req.params.invoiceId
+    } ,{invoiceStatus : req.body.status}).then((val)=>{
+        if(val){
+            res.json({"msg" : "updated" , "data" : val})
+        }
+    })
+})
+
 app.listen(port , ()=>{
     console.log(`Listing to the port ${port}`);
 })
