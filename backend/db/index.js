@@ -92,7 +92,7 @@ const batchSchema = new mongoose.Schema({
   singleCompSKU:String,
   qty:Number,
   invoice_no : String,
-  productSku : 
+  productSku : String
 })
 const Batches = mongoose.model('Batches' , batchSchema)
 const User = mongoose.model('User' , userSchema);
