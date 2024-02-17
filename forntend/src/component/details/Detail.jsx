@@ -65,6 +65,7 @@ try{
   useEffect(() => {
     async function fetchData() {
       
+      try{
         const res = await instance.get('/invoiceItem/'+id)
         .catch((err)=>console.error(err))
        
@@ -72,7 +73,12 @@ try{
         setInvoice(res.data.data)
         setItems(res.data)
       
+    }catch(err){
+      console.log(err);
+    }finally{
+   
     }
+  }
     fetchData();
   }, []);
 
@@ -122,7 +128,7 @@ try{
         
         <input type="text" value={formatDate(new Date())} disabled className=" shadow-sm " />
       </div>
-    <Items invoice={invoice}></Items>
+    <Items invoice={invoice} ></Items>
 
     <div className="amout flex justify-end mt-4">
             <p className=" text-xl font-semibold">Total Amount : {amount}</p>

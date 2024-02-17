@@ -7,7 +7,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
-
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
 import { Link } from 'react-router-dom';
 
 
@@ -36,7 +37,9 @@ const columns = [
 
 
 
-export default function Items({ invoice}) {
+export default function Items({ invoice }) {
+  let invoicelength =   Object.keys(invoice).length
+  
   
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
@@ -52,6 +55,8 @@ export default function Items({ invoice}) {
   };
 
   return (
+   <>
+   {(invoicelength>0 ) ? 
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
       <TableContainer sx={{ maxHeight: 440 }}>
         <Table stickyHeader aria-label="sticky table">
@@ -104,5 +109,16 @@ export default function Items({ invoice}) {
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
     </Paper>
+    :
+    <Backdrop
+    sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+    open={true}
+    
+  >
+    <CircularProgress color="inherit" />
+  </Backdrop>
+}
+
+</>
   );
 }
