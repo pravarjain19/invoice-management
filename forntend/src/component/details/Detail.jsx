@@ -4,6 +4,7 @@ import instance from "../../config/axiosConfig";
 import Items from "./Items";
 import { toast } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
+import * as XLSX from 'xlsx';
 const Detail = () => {
   const { id } = useParams();
 
@@ -32,6 +33,27 @@ const Detail = () => {
           position:'bottom-center'
         })
       }
+  }
+  async function excelDownload(){
+  
+  
+try{
+    // Generate a Blob from the Excel workbook
+    instance.get('/getexcel/'+id, {
+      method: 'GET',
+      responseType: 'blob', // important
+  }).then((response) => {
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${Date.now()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+  });
+  } catch (error) {
+    console.error('Error downloading Excel sheet:', error);
+  }
+
   }
   function formatDate(date) {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -87,7 +109,7 @@ const Detail = () => {
       </div>
       <div className="con2 flex flex-col justify-center gap-2">
             
-            <button disabled className=" cursor-not-allowed px-8 py-1 border-2 border-solid shadow-sm rounded-md">Create </button>
+            <button id="" onClick={excelDownload}  className="  px-8 py-1 border-2 border-solid shadow-sm rounded-md">Download </button>
            
             {(invoiceid && (items.status === 'Non-submitted') ) ? <>
               <button onClick={updateHandler} className="  cursor-pointer bg-green-600 text-white px-3 py-1 border-2 border-solid shadow-sm rounded-md">Submit invoice</button>

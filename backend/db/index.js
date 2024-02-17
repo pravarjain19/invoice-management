@@ -28,7 +28,7 @@ const orderDetailsSchema= new mongoose.Schema({
     order_status : String ,
     location_key :String,
     reference_code : String,
-    suborder_num : String, 
+    suborderNum : String, 
     batch_id : Number,
     suborder_quantity : String,
     sku : String,
@@ -87,6 +87,14 @@ const userSchema = new mongoose.Schema({
     password : String,
 })
 
+const batchSchema = new mongoose.Schema({
+  batchId: String,
+  singleCompSKU:String,
+  qty:Number,
+  invoice_no : String,
+  productSku : String
+})
+const Batches = mongoose.model('Batches' , batchSchema)
 const User = mongoose.model('User' , userSchema);
 const invoiceDetail = mongoose.model('invoiceDetail' , invoiceSchema)
 const invoiceItems = mongoose.model('invoiceItems' , invoiceItemSchema)
@@ -97,4 +105,4 @@ const test = mongoose.model('test' ,sbSchema )
 
 
 
-module.exports = {kyariCost , orderDetails , itemMaster , invoiceItems ,invoiceDetail , User}
+module.exports = {kyariCost , orderDetails , itemMaster , invoiceItems ,invoiceDetail , User , Batches}

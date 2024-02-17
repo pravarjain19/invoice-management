@@ -2,7 +2,7 @@ const express = require('express');
 const { port } = require('./config/config');
 const cors = require('cors');
 
-const {  invoiceDetail, User } = require('./db');
+const {  invoiceDetail, User, Batches } = require('./db');
 const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems, bactchId } = require('./helper/helper');
 
 const path = require('path')
@@ -69,13 +69,15 @@ app.post('/v1/invoice/update/:invoiceId'  , async (req, res)=>{
         invoice_no : invoiceID
     } , {invoiceStatus : 'pending'  , invoice_no : updateData}).then((val)=>{
         res.status(200).json({data : val})
+      
     }).catch(()=> res.status(500).json({message : "Failed"}))
+    await Batches.updateMany({invoice_no : invoiceID} , { $set: { invoice_no: updateData } }).catch(()=> res.status(500).json({message : "Failed"}))
     
 })
 
-app.get('/v1/invoice/getexcel' , async(req,res)=>{
-
-   const workbook= await generateExcelSheetForInvoice();
+app.get('/v1/invoice/getexcel/:invoiceId' , async(req,res)=>{
+   let id= req.params.invoiceId
+   const workbook= await generateExcelSheetForInvoice(id);
    const currentDate = new Date();
    const formattedDate = new Date().toISOString().replace(/:/g, '-');;
    res.setHeader(
@@ -119,14 +121,27 @@ app.get("/pravar" , (req,res)=>{
    
 })
 
-app.post("/v1/invoice/updateStatus/:invoiceId" , (req, res)=>{
-    invoiceDetail.updateOne({
-        invoice_no:req.params.invoiceId
-    } ,{invoiceStatus : req.body.status}).then((val)=>{
-        if(val){
-            res.json({"msg" : "updated" , "data" : val})
-        }
+app.post("/v1/invoice/updateStatus/:invoiceId" ,async (req, res)=>{
+    let  invoiceId = req.params.invoiceId ;
+     let inoviceData = await invoiceDetail.findOne({
+        invoice_no : invoiceId
     })
+
+    try{
+    if(inoviceData){
+   await invoiceDetail.updateOne({
+        invoice_no:req.params.invoiceId
+    } ,{invoiceStatus : req.body.status})
+    res.json({msg:"Updated Successfully"});
+}
+else {
+    res.status(411).json({msg : "Update Failed  Id ::" + invoiceId})
+}
+    }
+    catch(err) {
+        res.json(411).json({msg : "Failed to update " , err : err })
+        console.log(err);
+    }
 })
 
 app.listen(port , ()=>{

@@ -50,14 +50,14 @@ const Head = () => {
  
   return (
     <>
-      <div className="flex justify-between mt-2">
+      <div className=" md:flex justify-between mt-2">
         <div className="cont1">
           <h1 className=" font-semibold text-2xl">Kyari Fulfillment <br/> invoices</h1>
         </div>
-        <div className="cont2 w-5/12 p-6">
+        <div className="cont2  p-6 ">
 
           <Alert variant="outlined" severity="info" >
-            There are <b> {pending}</b> shipments ready to be invoice. Click{" "}
+            There are <b> {pending}</b> shipments ready to be invoice. <br/> Click{" "}
             <b>Create Invoice </b>button to create an invoice
           </Alert>
           
