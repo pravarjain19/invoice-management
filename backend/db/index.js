@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
 
-mongoose.connect("mongodb://127.0.0.1/selebdb")
-    .then(() => { console.log('Connected to MongoDB') })
-    .catch(()=>console.log("Error connecting to Db"))
+const mongoDBAtlasURI = 'mongodb+srv://pravarjain:root@cluster0.zbqwqff.mongodb.net/?retryWrites=true&w=majority';
+const dbName = 'selebdb';
+mongoose.connect(mongoDBAtlasURI, { useNewUrlParser: true, useUnifiedTopology: true, dbName });
 
 const db = mongoose.connection;
 
@@ -92,7 +92,7 @@ const batchSchema = new mongoose.Schema({
   singleCompSKU:String,
   qty:Number,
   invoice_no : String,
-  productSku : String
+  productSku : 
 })
 const Batches = mongoose.model('Batches' , batchSchema)
 const User = mongoose.model('User' , userSchema);
