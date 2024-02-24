@@ -27,34 +27,33 @@ async function getAllSkus(location ,invoiceId) {
     location_key: location,
     order_status: "Shipped",
   });
+  let resultArray = [];
 
-  const resultArray = await Promise.all(
-    invoiceStatus.map(async (data) => {
-      let finalItem = {};
-
-      try {
-        const itemmas = await itemMaster.findOne({
-          childSKU: data.sku,
-          singleCompSKU: { $regex: "KP" },
-        });
-
-        if (itemmas) {
-          finalItem["childSKU"] = itemmas.childSKU;
-          finalItem["singleCompSKU"] = itemmas.singleCompSKU;
-          finalItem["qty"] = itemmas.qty;
-          finalItem["subOrderQty"] = data.suborder_quantity;
-          finalItem["subOrderNumber"] = data.suborderNum;
-          finalItem["batchId"] = data.batch_id;
-        }
-      } catch (error) {
-        // Handle any errors that may occur during the database query
-        console.error("Error fetching data:", error);
-      }
-
-      return finalItem;
-    })
-  );
-
+  // Use for...of loop instead of forEach to enable async/await inside loop
+  for (const data of invoiceStatus) {
+    try {
+      const kpItems = await itemMaster.find({
+        childSKU: data.sku,
+        singleCompSKU: { $regex: "KP" }
+      });
+  
+      kpItems.forEach((itemmas) => {
+        let finalItem = {
+          childSKU: itemmas.childSKU,
+          singleCompSKU: itemmas.singleCompSKU,
+          qty: itemmas.qty,
+          subOrderQty: data.suborder_quantity,
+          subOrderNumber: data.suborderNum,
+          batchId: data.batch_id,
+        };
+        resultArray.push(finalItem);
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+  
+  console.log(resultArray);
       // multiply
   let finalArray = [];
   finalArray = resultArray.map((items) => ({
@@ -122,9 +121,9 @@ async function getAllSkus(location ,invoiceId) {
     })
   );
 
-   setTimeout(()=>{
+   
       addAllInvoiceDetailsToDb(finaldata , location , invoiceId)
-   } , 0)
+   
 
   setTimeout(() => {
     invoiceStatus.map((data) => {
@@ -266,67 +265,6 @@ async function generateExcelSheetForInvoice( invoiceId){
   
 }
 
-async function bactchId()
-{
-
-  try{
-
-    const invoiceStatus = await orderDetails.find({
-      invoice_status: false,
-      location_key: location,
-      order_status: "Shipped",
-    });
-  
-    const resultArray = await Promise.all(
-      invoiceStatus.map(async (data) => {
-        let finalItem = {};
-  
-        try {
-          const itemmas = await itemMaster.findOne({
-            childSKU: data.sku,
-            singleCompSKU: { $regex: "KP" },
-          });
-  
-          if (itemmas) {
-            finalItem["childSKU"] = itemmas.childSKU;
-            finalItem["singleCompSKU"] = itemmas.singleCompSKU;
-            finalItem["qty"] = itemmas.qty;
-            finalItem["subOrderQty"] = data.suborder_quantity;
-            finalItem["subOrderNumber"] = data.suborder_num;
-            finalItem["batchId"] = data.batch_id;
-          }
-        } catch (error) {
-          // Handle any errors that may occur during the database query
-          console.error("Error fetching data:", error);
-        }
-  
-        return finalItem;
-      })
-    );
-  
-    // multiply
-    let finalArray = [];
-    finalArray = resultArray.map((items) => ({
-      ...items,
-      quantity: items.qty * parseInt(items.subOrderQty, 10),
-    }));
-  
-    finalArray.sort((a, b) => {
-      if (typeof a.batchId === "number" && typeof b.batchId === "number") {
-        return a.batchId - b.batchId;
-      }
-      return 0;
-    });
-
-
-
-  
-}catch(err){
-  console.log(err);
-}
-
-}
-
 async function processInvoiceData(res) {
   console.log("processInvoice");
   try {
@@ -352,7 +290,7 @@ async function processInvoiceData(res) {
               singleCompSKU: itemmas.singleCompSKU,
               qty: itemmas.qty,
               subOrderQty: data.suborder_quantity,
-              subOrderNumber: data.suborder_num,
+              subOrderNumber: data.suborderNum,
               batchId: data.batch_id,
             };
           }
@@ -470,7 +408,6 @@ module.exports = {
   generateInvoiceId,
   getAllInvoiceItem,
   generateExcelSheetForInvoice,
- 
-  bactchId
-  ,processInvoiceData
+  
+processInvoiceData
 };

@@ -3,7 +3,7 @@ const { port } = require('./config/config');
 const cors = require('cors');
 
 const {  invoiceDetail, User, Batches } = require('./db');
-const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems, bactchId } = require('./helper/helper');
+const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems } = require('./helper/helper');
 
 const path = require('path')
 
