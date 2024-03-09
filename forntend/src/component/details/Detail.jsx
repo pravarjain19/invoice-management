@@ -69,9 +69,8 @@ try{
         const res = await instance.get('/invoiceItem/'+id)
         .catch((err)=>console.error(err))
        
-      
         setInvoice(res.data.data)
-        setItems(res.data)
+        setItems(res.data.details)
       
     }catch(err){
       console.log(err);
@@ -98,7 +97,7 @@ try{
             type="text"
             id="invoiceId"
             className=" border-2 border-solid shadow-sm rounded-md pl-1"
-            placeholder={items.invoiceId}
+            placeholder={items.invoice_no}
             onChange={(e) => {
               invoiceHandler(e);
             }}
@@ -117,16 +116,19 @@ try{
             
             <button id="" onClick={excelDownload}  className="  px-8 py-1 border-2 border-solid shadow-sm rounded-md">Download </button>
            
-            {(invoiceid && (items.status === 'Non-submitted') ) ? <>
+            {(invoiceid && (items.invoiceStatus === 'Non-submitted') ) ? <>
               <button onClick={updateHandler} className="  cursor-pointer bg-green-600 text-white px-3 py-1 border-2 border-solid shadow-sm rounded-md">Submit invoice</button>
             </> : <></> }
       </div>
       </div>
       <hr className="mt-7"/>
-      <div className="flex  gap-3 my-2 ">
+      <div className="  md:flex  gap-1 my-2  ">
         <p className=" text-l">Invoice date : </p>
         
-        <input type="text" value={formatDate(new Date())} disabled className=" shadow-sm " />
+        <input type="text" value={items.createdDate} disabled className=" shadow-sm " />
+        <p className=" text-l">Modified date : </p>
+        
+        <input type="text" value={items.modifiedDate} disabled className=" shadow-sm " />
       </div>
     <Items invoice={invoice} ></Items>
 

@@ -3,7 +3,7 @@ const { port } = require('./config/config');
 const cors = require('cors');
 
 const {  invoiceDetail, User, Batches } = require('./db');
-const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems } = require('./helper/helper');
+const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems, formatDate } = require('./helper/helper');
 
 const path = require('path')
 
@@ -54,8 +54,9 @@ app.get("/v1/invoice/invoiceItem/:invoiceId" , async(req , res)=>{
   const data =  await invoiceDetail.findOne({
     invoice_no : InvoiceID
    })
+   console.log(data);
     getAllInvoiceItem(InvoiceID).then((val)=>{
-        res.json({invoiceId : InvoiceID , data : val , status : data?.invoiceStatus})
+        res.json({invoiceId : InvoiceID , data : val , status : data?.invoiceStatus , details : data})
     }).catch((err)=>{
         res.send(err)
     })
@@ -67,7 +68,7 @@ app.post('/v1/invoice/update/:invoiceId'  , async (req, res)=>{
     let updateData = req.body.updateInvoiceId ;
     const data =  invoiceDetail.updateOne({
         invoice_no : invoiceID
-    } , {invoiceStatus : 'pending'  , invoice_no : updateData}).then((val)=>{
+    } , {invoiceStatus : 'pending'  , modifiedDate: formatDate(new Date()), invoice_no : updateData}).then((val)=>{
         res.status(200).json({data : val})
       
     }).catch(()=> res.status(500).json({message : "Failed"}))
@@ -116,10 +117,7 @@ app.post('/v1/invoice/login' , async (req , res)=>{
 })
 
 
-app.get("/pravar" , (req,res)=>{
-    processInvoiceData(res)
-   
-})
+
 
 app.post("/v1/invoice/updateStatus/:invoiceId" ,async (req, res)=>{
     let  invoiceId = req.params.invoiceId ;

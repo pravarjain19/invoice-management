@@ -21,7 +21,7 @@ async function getNumberOfPendingOfInvoice(location) {
 // get All the sku for invoice return list  , for the particular vendor
 // imp point to change is location key it will based on logined in user
 async function getAllSkus(location ,invoiceId) {
-  
+
   const invoiceStatus = await orderDetails.find({
     invoice_status: false,
     location_key: location,
@@ -180,6 +180,7 @@ async function addAllInvoiceDetailsToDb(data , location_key , invoiceID){
   const invoice = new invoiceDetail({
     invoice_no : invoicenum , 
     createdDate : formatDate(date),
+    modifiedDate: formatDate(date),
     location:location_key,
     totalAmount: getTotalAmout(data),
     invoiceItems : invoiceData.map((item)=>item._id),
@@ -360,10 +361,6 @@ async function processInvoiceData(res) {
     }, []);
 
 
-
-
-
-
    const workbook = new ExcelJS.Workbook();
    const worksheet = workbook.addWorksheet('GroupedData');
 
@@ -408,6 +405,6 @@ module.exports = {
   generateInvoiceId,
   getAllInvoiceItem,
   generateExcelSheetForInvoice,
-  
+  formatDate,
 processInvoiceData
 };
