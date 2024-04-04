@@ -104,6 +104,7 @@ async function getAllSkus(location ,invoiceId) {
       try {
         const skuName = await kyariCost.findOne({
           childSKU: item.singleCompSKU,
+          location_key : location
         });
         if (skuName) {
           finalObj = {
@@ -127,7 +128,7 @@ async function getAllSkus(location ,invoiceId) {
 
   setTimeout(() => {
     invoiceStatus.map((data) => {
-      console.log(data.order_id);
+      // console.log(data.order_id);
       orderDetails
         .updateMany({ order_id: data?.order_id }, { invoice_status: true })
         .then()
@@ -189,7 +190,7 @@ async function addAllInvoiceDetailsToDb(data , location_key , invoiceID){
   })
 
     await invoice.save();
-  console.log('Invoice saved successfully: '+ invoiceID );
+  // console.log('Invoice saved successfully: '+ invoiceID );
   
 }catch(err){
   console.log("Erro 175 " + err)
@@ -222,7 +223,7 @@ async function getAllInvoiceItem(id){
 
 
     if (!invoiceData) {
-      console.log('Invoice not found ' + id);
+      // console.log('Invoice not found ' + id);
       return "Not found";
     }
    const invoiceItem = invoiceData.invoiceItems
@@ -267,7 +268,7 @@ async function generateExcelSheetForInvoice( invoiceId){
 }
 
 async function processInvoiceData(res) {
-  console.log("processInvoice");
+  // console.log("processInvoice");
   try {
     const invoiceStatus = await orderDetails.find({
       invoice_status: false,
@@ -405,6 +406,5 @@ module.exports = {
   generateInvoiceId,
   getAllInvoiceItem,
   generateExcelSheetForInvoice,
-  formatDate,
-processInvoiceData
+  formatDate
 };

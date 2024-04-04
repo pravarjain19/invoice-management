@@ -3,7 +3,7 @@ const { port } = require('./config/config');
 const cors = require('cors');
 
 const {  invoiceDetail, User, Batches } = require('./db');
-const {  getNumberOfPendingOfInvoice, createInvoice, processInvoiceData, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems, formatDate } = require('./helper/helper');
+const {  getNumberOfPendingOfInvoice, createInvoice, generateInvoiceId, getAllInvoiceItem, generateExcelSheetForInvoice, getPdfForInvoiceItems, formatDate } = require('./helper/helper');
 
 const path = require('path')
 
@@ -31,7 +31,7 @@ try{
 app.get("/v1/invoice/create/:locationId" , (req , res)=>{
     const loction = req.params.locationId
     const invoiceId = generateInvoiceId()
-    console.log(invoiceId);
+    
      createInvoice(loction , invoiceId).then(val=> res.json({invoiceId : invoiceId , data : val}))
 })
 
@@ -54,7 +54,7 @@ app.get("/v1/invoice/invoiceItem/:invoiceId" , async(req , res)=>{
   const data =  await invoiceDetail.findOne({
     invoice_no : InvoiceID
    })
-   console.log(data);
+//    console.log(data);
     getAllInvoiceItem(InvoiceID).then((val)=>{
         res.json({invoiceId : InvoiceID , data : val , status : data?.invoiceStatus , details : data})
     }).catch((err)=>{
@@ -90,7 +90,7 @@ app.get('/v1/invoice/getexcel/:invoiceId' , async(req,res)=>{
     'attachment; filename=invoice_'+formattedDate+'.xlsx'
   );
    workbook.xlsx.write(res).then(()=>{
-    console.log("File has been downloaded")
+    // console.log("File has been downloaded")
    })
 })
 
@@ -101,17 +101,20 @@ app.get('/v1/invoice/getpdf'  , async (req , res)=>{
 app.post('/v1/invoice/login' , async (req , res)=>{
    const username = req.body.username 
    const password = req.body.password
-    console.log(username , password);
-   User.find({
+    // console.log(username , password);
+   User.findOne({
     userName : username,
     password : password
    }).then((val)=>{
-    if(val){
-        console.log(val);
-        res.status(200).json({msg : "login success"})
+  
+    if(val ){
+        // console.log(val);
+     return   res.status(200).json({msg : "login success" , jwt: val?.location})
     }
+   return res.status(403).json({msg : "Invalid Credentials"})
+   
    }).catch((err)=>{
-    console.log(err);
+    // console.log(err);
     res.status(403).json({msg : "Invalid Credentials"})
    })
 })

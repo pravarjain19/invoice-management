@@ -5,6 +5,9 @@ const mongoDBAtlasURI = 'mongodb+srv://pravarjain:root@cluster0.zbqwqff.mongodb.
 const dbName = 'selebdb';
 mongoose.connect(mongoDBAtlasURI, { useNewUrlParser: true, useUnifiedTopology: true, dbName });
 
+// mongoose.connect("mongodb://127.0.0.1/selebdb")
+//     .then(() => { console.log('Connected to MongoDB') })
+//     .catch(()=>console.log("Error connecting to Db"))
 const db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
@@ -20,7 +23,8 @@ const kyariCostSchema = new mongoose.Schema({
     selectCost : Number ,
     newExisting : String,
     costConfirmedDate : String ,
-    confirmedBy : String
+    confirmedBy : String , 
+    location_key : String
 })
 
 const orderDetailsSchema= new mongoose.Schema({
@@ -53,6 +57,7 @@ avilableToSaleOn: String
 const invoiceSchema = new mongoose.Schema({
     invoice_no : String ,
     createdDate : String ,
+    modifiedDate : String,
     vendorCode : String,
     location: String,
     totalAmount : Number,
@@ -85,6 +90,7 @@ const sbSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
     userName : String,
     password : String,
+    location : String,
 })
 
 const batchSchema = new mongoose.Schema({
@@ -101,7 +107,7 @@ const invoiceItems = mongoose.model('invoiceItems' , invoiceItemSchema)
 const kyariCost = mongoose.model('kyariCost', kyariCostSchema);
 const orderDetails = mongoose.model('orderDetails' , orderDetailsSchema)
 const itemMaster = mongoose.model('itemMaster' , itemMasterSchema)
-const test = mongoose.model('test' ,sbSchema )
+
 
 
 

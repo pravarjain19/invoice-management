@@ -13,7 +13,9 @@ const Head = () => {
   const navigate = useNavigate();
   useEffect(() => {
     async function pendingItem() {
-      const res = await instance.get("/getCount/ne14939928441");
+      const locationKey = localStorage.getItem("jwt")
+   
+      const res = await instance.get("/getCount/"+locationKey);
       setPending(res.data.pendingOrder);
       
     }
@@ -26,7 +28,8 @@ const Head = () => {
   const[open , setOpen] =  useState(false) ;
    const createInvoice = async ()=>{
    setOpen(true)
-  const res =  await instance.get('/create/ne14939928441')
+   const location_key = localStorage.getItem('jwt')
+  const res =  await instance.get('/create/'+location_key)
    try{
    if(res.data.invoiceId !== "" ){
     toast.success("Invoice Created !", {

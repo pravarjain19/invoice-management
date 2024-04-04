@@ -49,7 +49,8 @@ export default function StickyHeadTable() {
     const[invoice ,setInvoice] = React.useState([]);
   React.useEffect(()=>{
     async function fetchData(){
-      const res = await instance.get('/getAllInvoice/ne14939928441')
+      const location_key = localStorage.getItem("jwt")
+      const res = await instance.get('/getAllInvoice/'+location_key)
         
       setInvoice(res.data?.data)
     }
@@ -67,6 +68,8 @@ export default function StickyHeadTable() {
   };
 
   return (
+   <>
+   {invoice.length>0 && 
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
       <TableContainer sx={{ maxHeight: 440 }}>
         <Table stickyHeader aria-label="sticky table">
@@ -117,5 +120,8 @@ export default function StickyHeadTable() {
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
     </Paper>
+}
+    </>
+    
   );
 }

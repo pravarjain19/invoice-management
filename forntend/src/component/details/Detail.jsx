@@ -13,6 +13,10 @@ const Detail = () => {
   const[invoice ,setInvoice] = React.useState([]);
   const[items ,setItems] = React.useState({});
   const[amount , setAmount] = React.useState(0)
+   const [authenticated, setAuthenticated] = useState(false);
+  
+  
+  
 
   const invoiceHandler = (e) => {
     setInvoiceid(e.target.value);
@@ -78,8 +82,15 @@ try{
    
     }
   }
+  const jwt = localStorage.getItem("jwt");
+  if (jwt) {
+    setAuthenticated(true);
     fetchData();
-  }, []);
+  } else {
+    navigate('/login');
+  }
+    
+  }, [navigate]);
 
   useMemo(()=>{
     const amount = invoice.reduce((accumulator, item) => accumulator + (item?.invoiceAmount || 0), 0)
