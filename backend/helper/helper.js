@@ -1,7 +1,6 @@
 const { orderDetails, itemMaster, kyariCost, invoiceItems, invoiceDetail, Batches } = require("../db");
 const ExcelJS = require('exceljs');
-const PDFDocument = require('pdfkit');
-const streamBuffers = require('stream-buffers');
+
 
 async function createInvoice(location , invoiceId) {
   return await getAllSkus(location , invoiceId);
@@ -20,23 +19,21 @@ async function getNumberOfPendingOfInvoice(location) {
 
 // get All the sku for invoice return list  , for the particular vendor
 // imp point to change is location key it will based on logined in user
-async function getAllSkus(location ,invoiceId) {
+async function getAllSkus(location, invoiceId) {
+  try {
+    const invoiceStatus = await orderDetails.find({
+      invoice_status: false,
+      location_key: location,
+      order_status: "Shipped",
+    });
 
-  const invoiceStatus = await orderDetails.find({
-    invoice_status: false,
-    location_key: location,
-    order_status: "Shipped",
-  });
-  let resultArray = [];
-
-  // Use for...of loop instead of forEach to enable async/await inside loop
-  for (const data of invoiceStatus) {
-    try {
+    let resultArray = [];
+    for (const data of invoiceStatus) {
       const kpItems = await itemMaster.find({
         childSKU: data.sku,
-        singleCompSKU: { $regex: "KP" }
+        singleCompSKU: { $regex: "KP" },
       });
-  
+
       kpItems.forEach((itemmas) => {
         let finalItem = {
           childSKU: itemmas.childSKU,
@@ -48,104 +45,99 @@ async function getAllSkus(location ,invoiceId) {
         };
         resultArray.push(finalItem);
       });
-    } catch (err) {
-      console.log(err);
     }
-  }
-  
-  console.log(resultArray);
-      // multiply
-  let finalArray = [];
-  finalArray = resultArray.map((items) => ({
-    ...items,
-    quantity: items.qty * parseInt(items.subOrderQty, 10),
-  }));
 
-  
-  const map = {};
-  finalArray.forEach(item => {
+    let finalArray = resultArray.map((items) => ({
+      ...items,
+      quantity: items.qty * parseInt(items.subOrderQty, 10),
+    }));
+
+    const map = {};
+    finalArray.forEach((item) => {
       const key = `${item.batchId}_${item.singleCompSKU}`;
       if (!map[key]) {
-          map[key] = { batchId: item.batchId, singleCompSKU: item.singleCompSKU, qty: item.quantity , invoice_no : invoiceId};
+        map[key] = {
+          batchId: item.batchId,
+          singleCompSKU: item.singleCompSKU,
+          qty: item.quantity,
+          invoice_no: invoiceId,
+        };
       } else {
-          map[key].qty += item.quantity;
+        map[key].qty += item.quantity;
       }
-  });
+    });
 
- let batcharr = Object.values(map)
+    const batcharr = Object.values(map);
 
-  
+    const result = finalArray.reduce((acc, currentItem) => {
+      const existingItem = acc.find(
+        (item) => item.singleCompSKU === currentItem.singleCompSKU
+      );
 
-  const result = finalArray.reduce((acc, currentItem) => {
-    const existingItem = acc.find(
-      (item) => item.singleCompSKU === currentItem.singleCompSKU
+      if (existingItem) {
+        existingItem.quantity += currentItem.quantity;
+      } else {
+        acc.push({
+          singleCompSKU: currentItem.singleCompSKU,
+          quantity: currentItem.quantity,
+          childSKU: currentItem.childSKU,
+          batchId: currentItem.batchId,
+        });
+      }
+
+      return acc;
+    }, []);
+
+    const finaldata = await Promise.all(
+      result.map(async (item) => {
+        let finalObj = {};
+
+        try {
+          const skuName = await kyariCost.findOne({
+            childSKU: item.singleCompSKU,
+            location_key: location,
+          });
+          if (skuName) {
+            finalObj = {
+              ...item,
+              productName: skuName?.componentName,
+              pricePerUnit: skuName?.selectCost,
+              invoiceAmount: item.quantity * skuName?.selectCost,
+              sku: skuName?.childSKU,
+            };
+          }
+        } catch (err) {
+          console.log(err);
+        }
+        return finalObj;
+      })
     );
 
-    if (existingItem) {
-      // If the item already exists, update finalQty
-      existingItem.quantity += currentItem.quantity;
-    } else {
-      // If the item doesn't exist, add it to the result array
-      acc.push({
-        singleCompSKU: currentItem.singleCompSKU,
-        quantity: currentItem.quantity,
-        childSKU: currentItem.childSKU,
-        batchId: currentItem.batchId,
-      });
-    }
+    await addAllInvoiceDetailsToDb(finaldata, location, invoiceId);
 
-    return acc;
-  }, []);
-
-  let finaldata = await Promise.all(
-    result.map(async (item) => {
-      let finalObj = {};
-
-      try {
-        const skuName = await kyariCost.findOne({
-          childSKU: item.singleCompSKU,
-          location_key : location
-        });
-        if (skuName) {
-          finalObj = {
-            ...item,
-            productName: skuName?.componentName,
-            pricePerUnit: skuName?.selectCost,
-            invoiceAmount: item.quantity * skuName?.selectCost,
-            sku : skuName?.childSKU
-          };
+    await Promise.all([
+      ...invoiceStatus.map((data) =>
+        orderDetails.updateMany(
+          { order_id: data?.order_id },
+          { invoice_status: true }
+        )
+      ),
+      ...batcharr.map(async (items) => {
+        if (items.singleCompSKU && items.batchId) {
+          let sku = await kyariCost.findOne({ childSKU: items.singleCompSKU });
+          if (sku) items["productSku"] = sku?.componentName;
+          await Batches.create(items);
         }
-      } catch (err) {
-        console.log(err);
-      }
-      return finalObj;
-    })
-  );
+      }),
+    ]);
 
-   
-      addAllInvoiceDetailsToDb(finaldata , location , invoiceId)
-   
-
-  setTimeout(() => {
-    invoiceStatus.map((data) => {
-      // console.log(data.order_id);
-      orderDetails
-        .updateMany({ order_id: data?.order_id }, { invoice_status: true })
-        .then()
-        .catch((err) => console.log(err));
-    });
-  }, 0);
-  batcharr.map(async(items)=>{
-    if(items.singleCompSKU && items.batchId){
-    let sku =  await kyariCost.findOne({childSKU : items.singleCompSKU})
-    if(sku)
-      items[ "productSku" ]=  sku?.componentName
-      Batches.create(items)
-    }
-   })
-
-  return finaldata;
+    return finaldata;
+  } catch (error) {
+    console.error(error);
+    throw error; // Rethrow the error to be handled by the caller
+  }
 }
+
 
 function generateInvoiceId() {
   // Get current timestamp (milliseconds since epoch)
@@ -267,136 +259,6 @@ async function generateExcelSheetForInvoice( invoiceId){
   
 }
 
-async function processInvoiceData(res) {
-  // console.log("processInvoice");
-  try {
-    const invoiceStatus = await orderDetails.find({
-      invoice_status: false,
-      location_key: "ne14939928441",
-      order_status: "Shipped",
-    });
-
-    
-
-    const resultArray = await Promise.all(
-      invoiceStatus.map(async (data) => {
-        try {
-          const itemmas = await itemMaster.findOne({
-            childSKU: data.sku,
-            singleCompSKU: { $regex: "KP" },
-          });
-
-          if (itemmas) {
-            return {
-              childSKU: itemmas.childSKU,
-              singleCompSKU: itemmas.singleCompSKU,
-              qty: itemmas.qty,
-              subOrderQty: data.suborder_quantity,
-              subOrderNumber: data.suborderNum,
-              batchId: data.batch_id,
-            };
-          }
-        } catch (error) {
-          console.error("Error fetching data:", error);
-        }
-        return null; // Handle the case when itemmas is not found
-      })
-    );
-
-    
-    let finalArray = resultArray.map((items) => {
-      if (items && items.qty) {
-        return {
-          ...items,
-          finalQty: items.qty * parseInt(items.subOrderQty, 10),
-        };
-      } else {
-        // Handle the case where items is null or undefined
-        return null; // or any default value you prefer
-      }
-    });
-
-    // Remove any null entries from finalArray
-    finalArray = finalArray.filter((item) => item !== null);
-
-    // Sorting the finalArray based on batchId (if it's a number)
-    finalArray.sort((a, b) =>
-      typeof a.batchId === "number" && typeof b.batchId === "number"
-        ? a.batchId - b.batchId
-        : 0
-    );
-
-    // Rest of your code for creating groupedArray and writing to a file
-    const groupedArray = finalArray.reduce((acc, item) => {
-      if (typeof item.batchId === "number") {
-        const existingItem = acc.find(
-          (groupedItem) => groupedItem.batchId === item.batchId
-        );
-
-        if (!existingItem) {
-          acc.push({
-            batchId: item.batchId,
-            items: [
-              { singleCompSKU: item.singleCompSKU, finalQty: item.finalQty },
-            ],
-          });
-        } else {
-          const existingSKU = existingItem.items.find(
-            (skuItem) => skuItem.singleCompSKU === item.singleCompSKU
-          );
-
-          if (existingSKU) {
-            // If SKU already exists, add the finalQty
-            existingSKU.finalQty += item.finalQty;
-          } else {
-            // If SKU doesn't exist, add a new entry
-            existingItem.items.push({
-              singleCompSKU: item.singleCompSKU,
-              finalQty: item.finalQty,
-            });
-          }
-        }
-      }
-
-      return acc;
-    }, []);
-
-
-   const workbook = new ExcelJS.Workbook();
-   const worksheet = workbook.addWorksheet('GroupedData');
-
-   worksheet.columns = [
-     { header: 'BatchId', key: 'batchId', width: 20 },
-     { header: 'Sku', key: 'singleCompSKU', width: 10 },
-     { header: 'Qty', key: 'finalQty', width: 15 },
-   ];
-
-   groupedArray.forEach((group) => {
-     group.items.forEach((item) => {
-       worksheet.addRow({
-         batchId: group.batchId,
-         singleCompSKU: item.singleCompSKU,
-         finalQty: item.finalQty,
-       });
-     });
-   });
-
-   // Set content type and disposition for the response
-   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-   res.setHeader('Content-Disposition', 'attachment; filename=output.xlsx');
-
-   // Write the workbook to the response
-   await workbook.xlsx.write(res);
-
-   console.log('Data added to Excel sheet and sent in the response.');
-
-   // ... (rest of your code)
- } catch (error) {
-   console.error("An error occurred:", error);
-   res.status(500).send('Internal Server Error');
- }
-  
-}
 
 
 module.exports = {
